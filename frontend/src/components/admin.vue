@@ -56,21 +56,6 @@ export default {
   },
   mixins: [authenticate],
   methods: {
-    // getImageUrl(image) {
-    //   if(image){
-    //     console.log('Hello');
-    //     console.log(image.data)
-    //   const base64 = window.btoa(
-    //     new Uint8Array(image.data).reduce(
-    //       (data, byte) => data + String.fromCharCode(byte),
-    //       ""
-    //     )
-    //   );
-    //   return `data:${image.contentType};base64,${base64}`;
-    //   }
-    // const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageData)));
-    // return `data:image/jpeg;base64,${base64Image}`;
-    // },
     getImageBuffer(image) {
       return Buffer.from(image.data);
     },
@@ -122,11 +107,6 @@ export default {
 }
 .details {
   width: 100%;
-  /* display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between; */
-  /* align-items: center; */
   text-align: center;
   font-size: large;
 }

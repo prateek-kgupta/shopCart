@@ -93,8 +93,6 @@ router.put('/updateProduct', upload.single('product_image'), async (req, res) =>
         if (file) {
             const imageBuffer = fs.readFileSync(file.path);
             await client.query("BEGIN")
-            // const sqlQuery = `INSERT INTO product_info(product_id, product_name, product_image, price, product_desc, keyword1, keyword2, keyword3, stock, mrp, discount_per)
-            // VALUES (uuid_generate_v4(), '${data.product_name}', $1, ${data.price}, '${data.product_desc}', '${data.keyword1}', '${data.keyword2}', '${data.keyword3}', ${data.stock}, ${data.mrp}, ${data.discount_per})`
             const sqlQuery = `UPDATE product_info SET product_name = '${data.product_name}', product_image = $1, price='${data.price}', product_desc='${data.product_desc}', 
             keyword1 = '${data.keyword1}', keyword2 = '${data.keyword2}', keyword3= '${data.keyword3}', stock=${data.stock}, mrp=${data.mrp}, discount_per=${data.discount_per} 
             WHERE product_id = '${data.product_id}'`
@@ -120,8 +118,18 @@ router.put('/updateProduct', upload.single('product_image'), async (req, res) =>
     }
 })
 
-// router.put('/updateProduct', (req, res) =>{
-//     const data = JSON.parse(req.body.formData)
-// })
+router.put('/updateStock/:product_id', (req, res) => {
+    const product_id = req.params.product_id
+    const sqlQuery = `UPDATE product_info SET stock = stock+${req.body.addOn} WHERE product_id = '${product_id}'`
+    client.query(sqlQuery, (err, result) => {
+        if (!err) {
+            res.send('Stock Updated')
+        }
+        else {
+            console.log(err.message)
+        }
+    })
+})
+
 
 module.exports = router
