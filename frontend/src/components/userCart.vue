@@ -165,6 +165,10 @@ export default {
         .then((response) => {
           console.log(response.data);
           this.products = this.products.filter((t) => t.item_id !== item_id);
+          this.calcTotal()
+          if(this.products.length === 0){
+            this.cart_empty = true
+          }
         })
         .catch((err) => console.log(err));
     },
@@ -204,11 +208,7 @@ export default {
   },
   watch: {
     contact(newVal) {
-      // if (newVal.lengtht === 0) {
-      //   this.invalidContact = false;
-      // } else {
       this.invalidContact = newVal.length !== 10;
-      // }
     },
   },
 };

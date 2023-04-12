@@ -2,8 +2,8 @@
   <div class="main">
     <nav-bar>
       <div>
-        <input type="search" placeholder="Search Products" />
-        <input type="button" value="Search" />
+        <input type="search" placeholder="Search Products" v-model="searchKey"/>
+        <input type="button" value="Search" @click="searchProduct"/>
       </div>
     </nav-bar>
     <div class="products">
@@ -49,6 +49,7 @@ export default {
     return {
       products: [],
       product_Image: [],
+      searchKey: ''
     };
   },
   components: {
@@ -64,6 +65,17 @@ export default {
       const blob = new Blob([this.getImageBuffer(image)]);
       return URL.createObjectURL(blob);
     },
+    searchProduct(){
+      const keyword = this.searchKey
+      const token = localStorage.getItem('token')
+      axios.defaults.headers.common["Authorization"] = token
+      const url = `http://localhost:3030/admin/products/${keyword}`
+      axios.get(url)
+      .then((response) => {
+        this.products = [...response.data];
+      })
+      .catch((err) => console.log(err));
+    }
   },
   mounted() {
     const url = `http://localhost:3030/admin/productList`;

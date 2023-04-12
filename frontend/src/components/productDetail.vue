@@ -1,11 +1,6 @@
 <template>
   <div class="main">
-    <userNav>
-      <div>
-        <input type="search" placeholder="Search Products" />
-        <input type="button" value="Search" />
-      </div>
-    </userNav>
+    <userNav/>
     <div class="product_view">
       <div class="image">
         <img

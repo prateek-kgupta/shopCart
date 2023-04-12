@@ -131,5 +131,19 @@ router.put('/updateStock/:product_id', (req, res) => {
     })
 })
 
+router.get('/products/:keyword', (req, res) => {
+    const keyword = req.params.keyword.toLowerCase()
+    const sqlQuery = `SELECT * FROM product_info WHERE LOWER(keyword1) = '${keyword}' OR LOWER(keyword2) = '${keyword}' 
+    OR LOWER(keyword3) = '${keyword}' OR LOWER(product_name) like '% ${keyword}%' OR LOWER(product_name) like '%${keyword} %'`
+    client.query(sqlQuery, (err, result) => {
+        if (!err) {
+            return res.send(result.rows)
+        }
+        else {
+            console.log(err.message);
+        }
+    })
+    client.end;
+})
 
 module.exports = router

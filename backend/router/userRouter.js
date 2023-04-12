@@ -3,10 +3,23 @@ const client = require('../connection')
 const bodyParser = require('body-parser')
 const jwt = require('jsonwebtoken')
 const authenticate = require('../verifyToken')
+const nodemailer = require('nodemailer')
+require('dotenv').config()
 
 const router = express.Router()
 router.use(bodyParser.json())
 router.use(authenticate)
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: {
+        user: 'prateek.gpt2014@gmail.com',
+        pass: process.env.epas
+    }
+});
 
 //View Products
 router.get('/products', (req, res) => {
@@ -24,8 +37,8 @@ router.get('/products', (req, res) => {
 
 router.get('/products/:keyword', (req, res) => {
     const keyword = req.params.keyword.toLowerCase()
-    const sqlQuery = `SELECT * FROM product_info WHERE LOWER(keyword1) = '${keyword}' OR LOWER(keyword2) = '${keyword}' 
-    OR LOWER(keyword3) = '${keyword}'`
+    const sqlQuery = `SELECT * FROM product_info WHERE (LOWER(keyword1) = '${keyword}' OR LOWER(keyword2) = '${keyword}' 
+    OR LOWER(keyword3) = '${keyword}' OR LOWER(product_name) like '% ${keyword}%' OR LOWER(product_name) like '%${keyword} %') AND stock <> 0`
     client.query(sqlQuery, (err, result) => {
         if (!err) {
             return res.send(result.rows)
@@ -54,7 +67,7 @@ router.post('/relatedItems', (req, res) => {
     console.log('Related Items');
     const data = req.body
     const sqlQuery = `SELECT product_id, product_name, product_desc, product_image, price, mrp, discount_per from product_info 
-    WHERE product_id <> '${data.id}' AND (LOWER(keyword1) in ('${data.key1}', '${data.key2}', '${data.key3}') OR LOWER(keyword2) in ('${data.key1}', '${data.key2}', '${data.key3}') 
+    WHERE product_id <> '${data.id}' AND stock <> 0 AND (LOWER(keyword1) in ('${data.key1}', '${data.key2}', '${data.key3}') OR LOWER(keyword2) in ('${data.key1}', '${data.key2}', '${data.key3}') 
     OR LOWER(keyword3) in ('${data.key1}', '${data.key2}', '${data.key3}'))`
     client.query(sqlQuery, (err, result) => {
         if (!err) {
@@ -115,8 +128,6 @@ router.post('/addToCart', (req, res) => {
 
 router.get('/cart/:email', (req, res) => {
     const email = req.params.email
-    // const sqlQuery = `SELECT item_id, quantity, product_name, product_image, price, product_info.product_id as product_id
-    // FROM cart_info INNER JOIN product_info ON cart_info.product_id = product_info.product_id WHERE email='${email}'`
     const sqlQuery = `SELECT item_id, quantity, product_name,product_image, address, contact, price, product_info.product_id as product_id
     FROM product_info INNER JOIN cart_info ON product_info.product_id = cart_info.product_id INNER JOIN users_info ON 
     cart_info.email = users_info.email WHERE cart_info.email='${email}';`
@@ -168,12 +179,14 @@ router.post('/checkout/:email', (req, res) => {
     if (proceed) {
         console.log(products);
         let i;
+        let mailtext = `Your order has been placed successfully.\n\nDelivery Address: \n ${products[0].contact} \n ${products[0].address} \n\nOrder Receipt: \n`;
         for (i = 0; i < products.length; i++) {
             let product = products[i]
             let sqlQuery = `INSERT INTO sales_info VALUES ('${product.product_id}', '${email}', 
             ${product.quantity}, ${product.quantity * parseFloat(product.price)}, uuid_generate_v4())`
             client.query(sqlQuery, (err, result) => {
                 if (!err) {
+                    mailtext = mailtext + `${product.product_name} \t ${product.quantity} \t Rs.${product.quantity * parseFloat(product.price)}\n`
                     console.log('bought', product.quantity, product.product_name)
                 }
                 else {
@@ -195,7 +208,20 @@ router.post('/checkout/:email', (req, res) => {
             const sqlQuery = `DELETE FROM cart_info WHERE email = '${email}'`
             client.query(sqlQuery, (err, result) => {
                 if (!err) {
-                    return res.send('Transaction Complete')
+                    const mailOptions = {
+                        from: 'prateek.gpt2014@gmail.com',
+                        to: `${email}`,
+                        subject: 'Purchase Receipt from shopCart',
+                        text: mailtext
+                    };
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.log(error);
+                        } else {
+                            console.log('Email sent: ' + info.response);
+                            return res.send('A purchase receipt has been sent to your email')
+                        }
+                    });
                 }
                 else {
                     console.log(err.message);
@@ -206,45 +232,45 @@ router.post('/checkout/:email', (req, res) => {
     }
 })
 
-router.get('/orderHistory/:email', (req, res) =>{
+router.get('/orderHistory/:email', (req, res) => {
     console.log('Hello');
     const email = req.params.email
     const sqlQuery = `SELECT product_image, product_info.product_id, product_name, quantity_purchased, price_paid, sale_id FROM product_info 
     INNER JOIN sales_info ON product_info.product_id = sales_info.product_id WHERE email='${email}'`
-    client.query(sqlQuery, (err, result)=>{
-        if(!err){
+    client.query(sqlQuery, (err, result) => {
+        if (!err) {
             res.send(result.rows)
         }
-        else{
+        else {
             console.log(err.message)
         }
     })
     client.end
 })
 
-router.delete('/removeItem/:item_id', (req, res) =>{
+router.delete('/removeItem/:item_id', (req, res) => {
     const item_id = req.params.item_id
     const sqlQuery = `DELETE FROM cart_info WHERE item_id = '${item_id}'`
-    client.query(sqlQuery, (err, result)=>{
-        if(!err){
+    client.query(sqlQuery, (err, result) => {
+        if (!err) {
             res.send('Item removed')
         }
-        else{
+        else {
             console.log(err.message)
         }
     })
     client.end
 })
 
-router.put('/updateDetails/:email', (req, res) =>{
+router.put('/updateDetails/:email', (req, res) => {
     const data = req.body
     const email = req.params.email
     const sqlQuery = `UPDATE users_info SET address='${data.address}', contact='${data.contact}' WHERE email='${email}'`
-    client.query(sqlQuery, (err, result)=>{
-        if(!err){
+    client.query(sqlQuery, (err, result) => {
+        if (!err) {
             res.send('Address Updated')
         }
-        else{
+        else {
             res.send(err.message)
         }
     })
