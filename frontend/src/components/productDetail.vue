@@ -1,6 +1,6 @@
 <template>
   <div class="main">
-    <userNav/>
+    <userNav />
     <div class="product_view">
       <div class="image">
         <img
@@ -19,7 +19,9 @@
           <span class="discount">{{ product.discount_per }}% Off</span>
           <span class="mrp">{{ product.mrp }}</span>
         </p>
-        <button class="btn2" @click="addToCart(product.product_id)">Add to Cart</button>
+        <button class="btn2" @click="addToCart(product.product_id)">
+          Add to Cart
+        </button>
       </div>
     </div>
     <div class="related">
@@ -80,20 +82,22 @@ export default {
       return URL.createObjectURL(blob);
     },
     updatePage(product_id) {
-      this.$router.push({ path: `/productDetail/${product_id}` });
+      window.location.href = `http://localhost:8080/productDetail/${product_id}`;
+      // this.$router.push({ path: `/productDetail/${product_id}` });
     },
-    addToCart(id){
-      const token = localStorage.getItem('token')
+    addToCart(id) {
+      const token = localStorage.getItem("token");
       axios.defaults.headers.common["Authorization"] = token;
-      const url = `http://localhost:3030/user/addToCart`
+      const url = `http://localhost:3030/user/addToCart`;
       const formData = {
         product_id: id,
-        email: localStorage.getItem('email')
-      }
-      axios.post(url, formData)
-      .then(response => alert(response.data))
-      .catch(err => console.log(err))
-    }
+        email: localStorage.getItem("email"),
+      };
+      axios
+        .post(url, formData)
+        .then((response) => alert(response.data))
+        .catch((err) => console.log(err));
+    },
   },
   created() {
     this.product_id = this.$route.params.product_id;
@@ -117,7 +121,7 @@ export default {
       key1: this.product.keyword1.toLowerCase(),
       key2: this.product.keyword2.toLowerCase(),
       key3: this.product.keyword3.toLowerCase(),
-      id: this.product.product_id
+      id: this.product.product_id,
     };
     axios
       .post(url, keywords)
